@@ -43,6 +43,11 @@ export interface MainConfigPatch {
   chatModel?: ModelSelection;
   chatMemoryRounds?: number;
   chatImageLimit?: number;
+  /** 网易云音乐总开关。 */
+  musicEnabled?: boolean;
+  musicAppId?: string;
+  musicAppSecret?: string;
+  musicPrivateKey?: string;
 }
 
 /** 非负有限数才算合法；其余（`NaN`、负数、字符串）一律当作没写。 */
@@ -101,6 +106,10 @@ export function readMainConfig(merged: MergedConfig): MainConfigPatch | null {
   // 上界在宿主侧已经把关，这里补一次跨进程读回的判定：脏值只影响显示，不让它流到播放端
   const volume = nonNegative(main.voiceVolume);
   if (volume !== undefined && volume <= 1) patch.voiceVolume = volume;
+  if (typeof main.musicEnabled === 'boolean') patch.musicEnabled = main.musicEnabled;
+  if (typeof main.musicAppId === 'string') patch.musicAppId = main.musicAppId;
+  if (typeof main.musicAppSecret === 'string') patch.musicAppSecret = main.musicAppSecret;
+  if (typeof main.musicPrivateKey === 'string') patch.musicPrivateKey = main.musicPrivateKey;
   return patch;
 }
 

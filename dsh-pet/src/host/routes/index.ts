@@ -17,6 +17,7 @@ import { handleDesktopRoutes } from './desktop.ts';
 import { handleInteractionRoutes } from './interaction.ts';
 import { handleMenuRoutes } from './menu.ts';
 import { handleMotionRoutes } from './motion.ts';
+import { handleMusicRoutes } from './music.ts';
 import { handlePlaybackRoutes } from './playback.ts';
 import { handleSessionRoutes } from './session.ts';
 import { handleStateRoutes } from './state.ts';
@@ -35,6 +36,7 @@ const HANDLERS: readonly RouteHandler[] = [
   handleBalanceRoutes,
   handleInteractionRoutes,
   handleMotionRoutes,
+  handleMusicRoutes,
   handlePlaybackRoutes,
   handleSleepRoutes,
   handleChatRoutes,

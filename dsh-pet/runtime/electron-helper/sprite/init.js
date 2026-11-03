@@ -126,6 +126,13 @@ Object.assign(PetSprite.prototype, {
     // todoPanel 是面板句柄（占气泡槽，节点塞在 this.bubble 里），todoOpen 是穿透守卫标记。
     this.todoPanel = null;
     this.todoOpen = false;
+    // 音乐控制条：显隐（hover 驱动）、收起延时、最近一次状态与轮询定时器。
+    this.musicOn = false;
+    this.musicHideTimer = null;
+    this.musicState = null;
+    this.musicTimer = null;
+    this.musicBarHover = false;
+    this.musicLocked = false;
   },
 
   /** 建 DOM 并把首帧位置落到窗口；布局数值全部来自上面算好的 geometry。 */
@@ -184,8 +191,12 @@ Object.assign(PetSprite.prototype, {
     stage.appendChild(this.videoA);
     stage.appendChild(this.videoB);
     stage.appendChild(this.hit);
+    // 音乐控制条：挂在底部余量区，默认隐藏；hover 宠物时由 sprite-music 显隐与填充。
+    this.musicEl = document.createElement('div');
+    this.musicEl.className = 'pet-music';
     this.el.appendChild(this.bubble);
     this.el.appendChild(this.tip);
+    this.el.appendChild(this.musicEl);
     this.el.appendChild(stage);
     rootEl.appendChild(this.el);
     this.position();

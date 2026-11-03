@@ -96,8 +96,122 @@ tags:
     description: 字体、通知图标、表情包、动画素材
   - name: Voice
     description: 语音合成——参数校验、排队与缓存都在宿主，成功时直接返回 mp3 文件
+  - name: Music
+    description: 网易云音乐控制条——播放控制走系统媒体会话（SMTC），歌词与收藏走开放平台 API
 
 paths:
+  /dsh-pet-7340/music/state:
+    get:
+      tags: [Music]
+      operationId: getMusicState
+      summary: 拉取网易云音乐控制条状态
+      description: |
+        返回桌宠脚下歌词条所需的状态：播放中/曲名/歌手/三行歌词/是否已收藏，以及无法显示的原因
+        （未启用 disabled、未配置 unconfigured、未登录 not-logged-in、无客户端 no-client、无歌词 no-lyric）。
+        进度由本地时钟推算（客户端不上报时间轴），已知在拖进度条后会偏，可用 `POST /music/align` 手动对齐。
+      responses:
+        "200":
+          description: 状态快照
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /dsh-pet-7340/music/control:
+    post:
+      tags: [Music]
+      operationId: controlMusic
+      summary: 播放/暂停/上一首/下一首
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [playpause, next, prev]
+      responses:
+        "200":
+          description: 已下发
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+
+  /dsh-pet-7340/music/like:
+    post:
+      tags: [Music]
+      operationId: likeMusic
+      summary: 收藏/取消收藏当前歌曲
+      responses:
+        "200":
+          description: 收藏结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+
+  /dsh-pet-7340/music/align:
+    post:
+      tags: [Music]
+      operationId: alignMusic
+      summary: 手动对齐歌词进度
+      description: 把进度锚定到指定秒，用于拖进度条或启动晚于歌曲后的纠正。
+      parameters:
+        - name: sec
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        "200":
+          description: 已对齐
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /dsh-pet-7340/music/login/qr:
+    get:
+      tags: [Music]
+      operationId: musicLoginQr
+      summary: 生成网易云扫码登录二维码
+      responses:
+        "200":
+          description: 二维码地址与 key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /dsh-pet-7340/music/login/poll:
+    get:
+      tags: [Music]
+      operationId: musicLoginPoll
+      summary: 轮询扫码登录结果
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: anon
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 登录态
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /dsh-pet-7340/state:
     get:
       tags: [State]

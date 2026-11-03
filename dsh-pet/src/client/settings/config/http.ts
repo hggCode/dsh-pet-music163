@@ -53,6 +53,10 @@ export interface SaveFields {
   chatMemoryRounds: number;
   chatImageLimit: number;
   font: FontConfig;
+  musicEnabled: boolean;
+  musicAppId: string;
+  musicAppSecret: string;
+  musicPrivateKey: string;
 }
 
 /** 保存结果：调用方按 `kind` 分支，不再猜 HTTP 细节。 */
@@ -89,6 +93,10 @@ export function buildSaveBody(fields: SaveFields): Record<string, unknown> {
     chatMemoryRounds: fields.chatMemoryRounds,
     chatImageLimit: fields.chatImageLimit,
     font: fields.font,
+    musicEnabled: fields.musicEnabled,
+    musicAppId: fields.musicAppId,
+    musicAppSecret: fields.musicAppSecret,
+    musicPrivateKey: fields.musicPrivateKey,
   };
 }
 

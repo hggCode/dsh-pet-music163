@@ -182,6 +182,25 @@ function registerIpc({ ipcMain, petWindows, shell, openTarget, petRoute }) {
 
   // 只叫窗口、不改去向：桌面宿主用 dsh:// 把主窗口提到前台（被别的窗口挡住也有效）。
   // 必须按宿主形态门控：dsh:// 是系统级注册的，`dsh web` 形态下发它会把桌面版 DSH 拉起来。
+  // 右键菜单「打开网易云」：用系统协议唤起客户端。优先 orpheus://（网易云自己的协议，
+  // 未运行时通常也能被协议处理器拉起），失败再试 cloudmusic://；都失败只记日志，不影响宠物。
+  ipcMain.on('pet:open-music', () => {
+    shell.openExternal('orpheus://').catch(() => {
+      shell.openExternal('cloudmusic://').catch((error) => {
+        console.error('[dsh-pet-desktop-helper] open netease music failed:', error);
+      });
+    });
+  });
+
+  // 通用打开外部链接（仅 http/https）：网易云扫码授权页等用。
+  ipcMain.on('pet:open-external', (event, payload) => {
+    const url = payload && typeof payload === 'object' ? String(payload.url || '') : '';
+    if (!/^https?:[/][/]/.test(url)) return;
+    shell.openExternal(url).catch((error) => {
+      console.error('[dsh-pet-desktop-helper] openExternal(url) failed:', error);
+    });
+  });
+
   ipcMain.on('pet:focus-host', () => {
     if (openTarget !== 'desktop') return;
     shell.openExternal('dsh://open').catch((error) => {

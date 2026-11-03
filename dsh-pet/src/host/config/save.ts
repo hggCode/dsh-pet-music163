@@ -146,6 +146,17 @@ export function saveUserConfig(
   // 与 chatMemoryRounds 同一套语义——传了就校验后进白名单，没传则走下面的透传保留。
   const cil = o.chatImageLimit;
   if (cil !== undefined && !topFieldValid('chatImageLimit', cil)) return null;
+  // 网易云音乐（全局）：开关布尔；三项凭证为非空字符串（允许空串=未配置，不强制）。
+  const mEnable = o.musicEnabled;
+  if (mEnable !== undefined && typeof mEnable !== 'boolean') return null;
+  const musicStr = (v: unknown): string | undefined | false =>
+    v === undefined || v === null ? undefined : typeof v === 'string' ? v.trim() : false;
+  const mAppId = musicStr(o.musicAppId);
+  if (mAppId === false) return null;
+  const mSecret = musicStr(o.musicAppSecret);
+  if (mSecret === false) return null;
+  const mKey = musicStr(o.musicPrivateKey);
+  if (mKey === false) return null;
   const cleanModel = (v: Record<string, unknown>): { provider: string; model: string } => ({
     provider: String(v.provider).trim(),
     model: String(v.model).trim(),
@@ -172,6 +183,10 @@ export function saveUserConfig(
   // 数值归一化落盘：请求体传 "9" 也存成 9（与读取侧 topFieldValid 的 Number() 口径一致）
   if (cmr !== undefined) outConfig.chatMemoryRounds = Number(cmr);
   if (cil !== undefined) outConfig.chatImageLimit = Number(cil);
+  if (mEnable !== undefined) outConfig.musicEnabled = mEnable;
+  if (mAppId !== undefined) outConfig.musicAppId = mAppId;
+  if (mSecret !== undefined) outConfig.musicAppSecret = mSecret;
+  if (mKey !== undefined) outConfig.musicPrivateKey = mKey;
   // 透传保留：请求体未携带的顶层字段，从 existing（磁盘现有用户文件）原样带回——
   // 设置页只提交 pets(+全局开关+physics+模型+对话历史条数)，手改的 whisperPrompt/memes/... 借此保住。
   // 白名单字段只在「请求体传了」时才算白名单（已由上方写入）；未传时走这里透传磁盘旧值——
@@ -195,6 +210,10 @@ export function saveUserConfig(
   if (cm !== undefined) bodyOwned.add('chatModel');
   if (cmr !== undefined) bodyOwned.add('chatMemoryRounds');
   if (cil !== undefined) bodyOwned.add('chatImageLimit');
+  if (mEnable !== undefined) bodyOwned.add('musicEnabled');
+  if (mAppId !== undefined) bodyOwned.add('musicAppId');
+  if (mSecret !== undefined) bodyOwned.add('musicAppSecret');
+  if (mKey !== undefined) bodyOwned.add('musicPrivateKey');
   if (existing && typeof existing === 'object') {
     for (const key of Object.keys(existing)) {
       if (bodyOwned.has(key)) continue; // 白名单字段由请求体决定

@@ -238,6 +238,10 @@ describe('buildSaveBody —— 请求体字段', () => {
       chatMemoryRounds: 5,
       chatImageLimit: 10,
       font: {},
+      musicEnabled: false,
+      musicAppId: '',
+      musicAppSecret: '',
+      musicPrivateKey: '',
     } as unknown as SaveFields;
     assert.deepEqual(Object.keys(buildSaveBody(fields)).sort(), [
       'chatAnimationEnabled',
@@ -248,6 +252,10 @@ describe('buildSaveBody —— 请求体字段', () => {
       'clickSoundEnabled',
       'confineToScreen',
       'font',
+      'musicAppId',
+      'musicAppSecret',
+      'musicEnabled',
+      'musicPrivateKey',
       'notificationsEnabled',
       'pets',
       'physics',

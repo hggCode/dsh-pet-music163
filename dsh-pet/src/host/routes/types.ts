@@ -18,6 +18,7 @@ import type { PoseStore } from '../pose.ts';
 import type { SleepStore } from '../sleep.ts';
 import type { PollStateStore } from '../state.ts';
 import type { VoiceTarget } from '../surface.ts';
+import type { MusicService } from '../music/service.ts';
 import type { TodoStore } from '../todo/store.ts';
 import type { HearService } from '../voice/hear.ts';
 import type { VoiceService } from '../voice/speak.ts';
@@ -75,6 +76,8 @@ export interface PetRouteDeps {
   readonly state: PollStateStore;
   /** 待办清单（单个 JSON 文件，读改写串行）。 */
   readonly todos: TodoStore;
+  /** 网易云音乐控制（SMTC + 开放平台 API）。 */
+  readonly music: MusicService;
   /** 工作状态联动快照。 */
   readonly workStatus: WorkStatusStore;
   /** 外部写入用的固定会话 id。 */

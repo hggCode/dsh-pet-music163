@@ -58,6 +58,15 @@ Object.assign(PetSprite.prototype, {
       // 重载配置：请宿主重启桌面 Helper，全部窗口按最新配置重建。维护动作，排在回到初始位置之前。
       { label: '重载配置', action: 'reload' },
       { label: '回到初始位置', action: 'home' },
+      // 网易云：放最底下——歌词锁定（常驻/恢复 hover）、登录/切换用户、打开网易云应用。
+      {
+        label: '网易云',
+        children: [
+          { label: this.musicLocked ? '取消歌词锁定' : '歌词锁定', action: 'music-lock' },
+          { label: '登录网易云', action: 'music-login' },
+          { label: '打开网易云', action: 'music-open' },
+        ],
+      },
     ];
     // 第三方菜单项统一收在「更多」下：0 项不出现；某个 owner 只有 1 项时跳过 owner 那层直接平铺。
     // 放在最后——「更多」不插在工具项与动作之间。
@@ -133,6 +142,19 @@ Object.assign(PetSprite.prototype, {
     }
     if (leaf.action === 'todo') {
       this.toggleTodo(); // 打开待办面板（右键菜单入口）
+      return;
+    }
+    if (leaf.action === 'music-lock') {
+      this.setMusicLock(!this.musicLocked); // 歌词常驻锁开关
+      return;
+    }
+    if (leaf.action === 'music-login') {
+      this.loginMusic(); // 生成扫码登录链接并轮询结果
+      return;
+    }
+    if (leaf.action === 'music-open') {
+      // 交给主进程用系统默认方式打开网易云（cloudmusic:// 协议或客户端）
+      if (window.petBridge && window.petBridge.openMusic) window.petBridge.openMusic();
       return;
     }
     if (leaf.action === 'home') {

@@ -23,6 +23,7 @@ import { registerTodoReminders } from './plugin/todo-reminders.ts';
 import { createVoiceService } from './voice/speak.ts';
 import { createHearService } from './voice/hear.ts';
 import { TODO_FILE_NAME, TodoStore } from './todo/store.ts';
+import { MusicService } from './music/service.ts';
 import { join } from 'node:path';
 import type { PetRouteDeps } from './routes/types.ts';
 
@@ -83,6 +84,15 @@ export function apply(ctx: any): void {
   // 待办清单：一份用户级数据（不分宠物），落盘在插件数据根；提醒循环与 /todos 路由共用同一个实例。
   const todos = new TodoStore({ file: join(userRoot, TODO_FILE_NAME), log });
 
+  // 网易云音乐控制：SMTC 采样 + 开放平台 API；随插件卸载停掉常驻 PowerShell。
+  const music = new MusicService({
+    configPaths,
+    userRoot,
+    log: (level, message) => (level === 'warn' ? log.warn(message) : log.info(message)),
+  });
+  music.start();
+  ctx.effect(() => () => music.stop(), 'dsh-pet: music service');
+
   const desktopHelper = createDesktopHelper({
     ctx,
     configPaths,
@@ -105,6 +115,7 @@ export function apply(ctx: any): void {
     ...sessionNotify,
     ctx,
     todos,
+    music,
     // 语音合成：缓存落 userRoot，失败只留日志，不打断宿主
     voice: createVoiceService({ userRoot, log }),
     // 语音识别：能力来自宿主（DSH 的 speechToText），没启用时服务自己在调用时回 unsupported

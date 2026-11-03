@@ -53,10 +53,18 @@ contextBridge.exposeInMainWorld('petBridge', {
   openDshSite(url) {
     ipcRenderer.send('pet:open-site', { url });
   },
+  // 通用打开外部链接（仅 http/https）：网易云扫码授权页等用。
+  openExternal(url) {
+    ipcRenderer.send('pet:open-external', { url: String(url || '') });
+  },
   // 只把 DSH 主窗口提到前台：走应用自注册的 dsh:// 协议（单实例锁会让它聚焦），被别的窗口挡住也有效。
   // 主进程按宿主形态门控：只有桌面应用宿主才真发，web 形态下发它会把桌面版拉起来。
   focusDshHost() {
     ipcRenderer.send('pet:focus-host');
+  },
+  // 右键菜单「打开网易云」：交给主进程用系统协议唤起网易云客户端。
+  openMusic() {
+    ipcRenderer.send('pet:open-music');
   },
   // 截一帧桌面（宠物所在那块屏）：一次性读取，不建流、不留存。
   // 返回 { mediaType, data, width, height, bytes } 或 null（取不到画面）。

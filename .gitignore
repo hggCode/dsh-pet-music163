@@ -42,6 +42,12 @@ dsh-pet/runtime/electron-helper/shared-core.js
 # ── dsh-pet 桌宠应用打包产物（electron-builder 输出，`node scripts/dist.mjs` 可重生）──
 dsh-pet/dist-app/
 
+# ── 含明文私钥，禁止入库 ──
+music163-key.md
+
+# ── 本地 npm 生成，上游用 pnpm-lock.yaml，不入库 ──
+dsh-pet/package-lock.json
+
 # ── IDE / 编辑器 ──
 .idea/
 .vscode/

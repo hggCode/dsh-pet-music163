@@ -52,6 +52,10 @@ export default defineConfig([
   {
     ...shared,
     // 宿主半侧保持 ESM（由 DSH 的 Loader import），绝不能包 IIFE。
+    // target 提到 es2022：es2020 会把 class field 降级成 `_defineProperty(...)`，在产物里留下
+    // `@oxc-project/runtime/helpers/defineProperty` 裸 import——该包不在本包依赖里，插件装进
+    // profile 由 DSH import lib/index.js 时会 ERR_MODULE_NOT_FOUND。es2022 后降级辅助整体消失。
+    target: 'es2022',
     entry: {
       index: 'src/host/index.ts',
     },

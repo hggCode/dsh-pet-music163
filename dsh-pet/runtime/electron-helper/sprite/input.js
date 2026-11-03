@@ -249,6 +249,7 @@ Object.assign(PetSprite.prototype, {
       this.menuOpen ||
       this.chatOpen ||
       this.todoOpen ||
+      this.musicOn ||
       this.balanceClickable() ||
       this.workClickable()
     );
@@ -289,7 +290,9 @@ Object.assign(PetSprite.prototype, {
     const rects = [];
     // 控件矩形 = 主进程允许接收点击的区域，矩形外继续穿透。可点的余额气泡悬在余量区，不登记就点不到。
     const controls = [
-      ...document.querySelectorAll('.dsh-pet-menu-column, .dsh-pet-chat, .dsh-pet-todo, .pet-bubble.is-clickable'),
+      ...document.querySelectorAll(
+        '.dsh-pet-menu-column, .dsh-pet-chat, .dsh-pet-todo, .pet-bubble.is-clickable, .pet-music.is-open',
+      ),
     ];
     for (const el of this.inputRegionElements) {
       if (!controls.includes(el)) {
@@ -363,6 +366,11 @@ Object.assign(PetSprite.prototype, {
     this.setInteractive(inBody);
     // 悬浮提示与可交互判定同源（同一个 inBody）：进身体出现，离开收起
     this.setTip(inBody);
+    // 音乐控制条：光标在身体上或在控制条上 → 显示；离开两者 → 延时收起。
+    // 用窗口内坐标与条的矩形判定（两者同一坐标系）；条显示后 busy=true 会保住窗口可交互。
+    const inBar = this.musicOn && this.musicEl && this.pointInMusicBar(wx, wy);
+    if (inBody || inBar) this.showMusic();
+    else this.hideMusicSoon();
     // 跟随光标：位置依赖光标，每次移动都要重摆（setTip 只在显隐变化时渲染）
     if (this.tipOn) this.renderTip();
   },

@@ -8,6 +8,10 @@
  */
 'use strict';
 
+// 音乐控制条高度（px，CSS 基准 462 宽宠物）：三行歌词 + 一排按钮。按下边距预留下方空间，
+// 窗口整体加高但只向下长，宠物位置不受影响。
+const MUSIC_BAR_H = 118;
+
 // 左键 + 修饰键 = 「呼出 DSH」的快捷键。Windows / Linux 用 Ctrl；macOS 上 Ctrl+左键是系统右键
 // （先触发 contextmenu、拿不到 click），所以改用 Cmd。快捷键文案按平台取，判定统一走 isOpenShortcut。
 const OPEN_SHORTCUT_HINT = /Mac/i.test(navigator.platform || navigator.userAgent) ? 'Cmd+左键' : 'Ctrl+左键';
@@ -72,7 +76,8 @@ class PetSprite {
     this.margin = {
       t: Math.max(m, S.bubbleTopMarginPx(fontConf, this.size), S.todoPanelTopMarginPx(fontConf, this.size)),
       r: m,
-      b: m,
+      // 下方额外预留音乐控制条高度：它悬在余量区（平时穿透），只有 hover 时才显现可点。
+      b: Math.max(m, MUSIC_BAR_H * (this.size / 462)),
       l: m,
     };
     window.__dshPetDebug.winMargin = this.margin;

@@ -22,6 +22,7 @@ import { makeGlobalCard, type GlobalFlagKey, type GlobalFlags } from './settings
 import { makeLoadStatus } from './settings/load-status.ts';
 import { makeModelCard, type ChatFlagKey, type ChatFlagValues, type ModelFieldKey } from './settings/model-card.ts';
 import { makeMobileCard } from './settings/mobile-card.ts';
+import { makeMusicCard } from './settings/music-card.ts';
 import { makeModelPicker } from './settings/picker/index.ts';
 import { makeVoicePicker } from './settings/picker/voice-picker.ts';
 import { runNotificationTest } from './settings/notify-test.ts';
@@ -80,6 +81,7 @@ export function makePetConfigSection(
   const PhysicsCard = makePhysicsCard(rt);
   const ShortcutsCard = makeShortcutsCard(rt, ctx);
   const MobileCard = makeMobileCard(rt);
+  const MusicCard = makeMusicCard(rt);
   const Actions = makeActions(rt);
   const { ConfigMetaCard, StorageCard } = makePathsCards(rt);
   const SettingsDialog = makeDialog(rt);
@@ -168,6 +170,11 @@ export function makePetConfigSection(
     const [chatMemory, setChatMemory] = useState(10);
     // 对话配图张数上限（全局默认）：初值 20 是内置默认，加载后由成品值覆盖。
     const [chatImageLimit, setChatImageLimit] = useState(20);
+    // 网易云音乐（全局）：开关 + 三项凭证；初值空/关，加载后由成品值覆盖。
+    const [musicEnabled, setMusicEnabled] = useState(false);
+    const [musicAppId, setMusicAppId] = useState('');
+    const [musicAppSecret, setMusicAppSecret] = useState('');
+    const [musicPrivateKey, setMusicPrivateKey] = useState('');
     // 头像预览的破缓存版本号：上传成功后换一个，预览才会重新取图（同一 URL 会被浏览器记住）。
     const [avatarVersion, setAvatarVersion] = useState(Date.now());
     // 头像上传中：按钮禁用并换文案，与「保存」的 busy 分开——上传不写配置。
@@ -199,6 +206,10 @@ export function makePetConfigSection(
         if (patch.chatModel !== undefined) setChatModel(patch.chatModel);
         if (patch.chatMemoryRounds !== undefined) setChatMemory(patch.chatMemoryRounds);
         if (patch.chatImageLimit !== undefined) setChatImageLimit(patch.chatImageLimit);
+        if (patch.musicEnabled !== undefined) setMusicEnabled(patch.musicEnabled);
+        if (patch.musicAppId !== undefined) setMusicAppId(patch.musicAppId);
+        if (patch.musicAppSecret !== undefined) setMusicAppSecret(patch.musicAppSecret);
+        if (patch.musicPrivateKey !== undefined) setMusicPrivateKey(patch.musicPrivateKey);
       },
       [replace],
     );
@@ -310,6 +321,10 @@ export function makePetConfigSection(
         chatMemoryRounds: chatMemory,
         chatImageLimit,
         font,
+        musicEnabled,
+        musicAppId,
+        musicAppSecret,
+        musicPrivateKey,
       }),
       busy: () => busy,
       setBusy,
@@ -410,6 +425,17 @@ export function makePetConfigSection(
         }),
         h(PhysicsCard, { busy, physics, onChange: patchPhysics }),
         h(MobileCard, { busy, physics, onChange: patchPhysics }),
+        h(MusicCard, {
+          busy,
+          enabled: musicEnabled,
+          appId: musicAppId,
+          appSecret: musicAppSecret,
+          privateKey: musicPrivateKey,
+          onToggle: setMusicEnabled,
+          onAppId: setMusicAppId,
+          onAppSecret: setMusicAppSecret,
+          onPrivateKey: setMusicPrivateKey,
+        }),
         h(Actions, {
           busy,
           msg,
