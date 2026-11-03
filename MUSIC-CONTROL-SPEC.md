@@ -245,3 +245,36 @@ npm run build                # 必须：生成 lib/（宿主 TS、client bundle�
 - **改了 `package.json` 依赖**：`npm install` 后仍需 `npm run build` + 重启；若 DSH 插件管理器管着 profile 依赖，必要时在设置页重装一次。
 - **不需要**卸载/重新导入插件（Junction 生效）。
 - 验证：见 §9 与 §10.4。
+
+---
+
+## 12. 日常同步上游 + 自己留档（Git 工作流）
+
+**远程布局**（本仓库已按此配置）：
+- `origin` → `https://github.com/PC2005-cloud/dsh-pet.git`（**作者上游**，只用来拉更新）
+- `mine` → `https://github.com/hggCode/dsh-pet-music163.git`（**自己的留档仓库**，只用来 push）
+- 自己的改动都在分支 **`feat/netease-music`**；`main` 始终保持与上游一致（纯镜像），这样拉上游永远快进、无冲突。
+
+**留档 / 备份自己的进度**
+```sh
+git switch feat/netease-music
+git push mine feat/netease-music
+```
+
+**每次同步作者更新（标准循环）**
+```sh
+git switch main
+git pull origin main                 # main 只跟上游 → 永远快进，不产生冲突
+git switch feat/netease-music
+git merge main                        # 在这条分支上吸收上游；冲突按 §10 清单处理
+# 处理完冲突后跑门禁（§9），然后：
+git push mine feat/netease-music      # 把合并结果留档
+cd dsh-pet/dsh-pet && npm install && npm run build   # 见 §11，再重启 DSH
+```
+
+**要点**
+- 冲突只会在 `git merge main` 这一步出现；`git pull origin main` 因为 `main` 未被改动，永远是快进。
+- 合并冲突的判定与重放锚点见 **§10**：先接受上游版本，再按 §10.2 的插入点把「网易云相关」改动加回，别整份覆盖。
+- `mine` 仓库**不必**与上游是 Fork 关系（`origin` 直接指作者仓库即可拉更新）；网页 Fork 只影响能否发 PR。
+- 私钥 `music163-key.md`、`dsh-pet/package-lock.json` 已 gitignore，不会入库/推送。
+- 首次 push 需要 GitHub 凭据（HTTPS + 凭据管理器或 PAT；本机未装 `gh`）。
