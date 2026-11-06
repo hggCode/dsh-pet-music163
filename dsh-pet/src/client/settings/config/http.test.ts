@@ -242,8 +242,10 @@ describe('buildSaveBody —— 请求体字段', () => {
       musicAppId: '',
       musicAppSecret: '',
       musicPrivateKey: '',
+      animationWeights: { idle: 10, turn: 5, move: 5 },
     } as unknown as SaveFields;
     assert.deepEqual(Object.keys(buildSaveBody(fields)).sort(), [
+      'animationWeights',
       'chatAnimationEnabled',
       'chatImageEnabled',
       'chatImageLimit',

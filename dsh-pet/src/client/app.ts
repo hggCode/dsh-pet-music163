@@ -12,10 +12,12 @@ import { takeMenuEvents } from './menu-service.ts';
 import { getStateSnapshot } from './state-service.ts';
 import { dicts, makePetConfigSection, NS, petBridge } from './settings.ts';
 import { initNotify } from './notify.ts';
+import { mountBaifan } from './baifan.ts';
 import { installCommandFaces, type CommandFace, type CommandUiLike } from './command-faces.ts';
 import { installSectionNavIcon } from './nav-icon.ts';
 import { registerPetChatTab, openPetChatTab } from './chat/register.ts';
 import { PET_CHAT_COMMAND_ID, registerPetChatShortcut } from './chat/shortcut.ts';
+import { dicts as chatDicts, NS as CHAT_NS } from './chat/locales/index.ts';
 import { registerPetCardShortcuts } from './pet/card/shortcut.ts';
 import type * as ReactNS from 'react';
 import type * as PrimitivesNS from '@deepseek-ai/dsh-client-ui-primitives';
@@ -72,6 +74,9 @@ export function makeFactory(): (require: (mod: string) => any) => any {
       // 设置页文案字典。
       ctx.effect(() => ctx.locale.register(NS, dicts), 'dsh-pet: dictionaries');
       const t = ctx.locale.bind(NS);
+      // 侧栏对话的文案独立成命名空间：只覆盖对话面板，不与设置页字典混在一起。
+      ctx.effect(() => ctx.locale.register(CHAT_NS, chatDicts), 'dsh-pet: chat dictionaries');
+      const chatT = ctx.locale.bind(CHAT_NS);
 
       // 同页第三方插件可通过 Cordis 服务 petApi7340 读取本页宠物的实况、播放进度、最近一拍状态与菜单点击。
       // 只开读，控制仍走 HTTP，避免出现两条控制通道。
@@ -83,6 +88,9 @@ export function makeFactory(): (require: (mod: string) => any) => any {
         pose: readPose,
         progress: readProgress,
       });
+
+      // 内置玩法「吃白饭」：注册走 HTTP，点击读页面内 Cordis 服务，不读本模块的内部状态。
+      ctx.effect(() => mountBaifan(ctx), 'dsh-pet: activity-baifan');
 
       // 系统通知：host 把通知帧写进 /state 的 sections.notify，统一轮询发现变化后弹 toast。
       ctx.effect(
@@ -213,6 +221,7 @@ export function makeFactory(): (require: (mod: string) => any) => any {
               useEffect,
               useRef,
               useState,
+              t: chatT,
               ...(primitives === undefined
                 ? {}
                 : {

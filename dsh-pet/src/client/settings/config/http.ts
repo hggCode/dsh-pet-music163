@@ -5,7 +5,7 @@
  * @module dsh-pet/src/client/settings/config/http
  */
 import { ROUTE_PATH } from '../../../shared/constants.ts';
-import type { FontConfig, ModelSelection, Pet, PhysicsParams } from '../../../shared/types.ts';
+import type { FontConfig, ModelSelection, Pet, PhysicsParams, Weights } from '../../../shared/types.ts';
 import type { ModelCatalogGroup } from '../picker/index.ts';
 import type { MergedConfig } from './read.ts';
 
@@ -57,6 +57,8 @@ export interface SaveFields {
   musicAppId: string;
   musicAppSecret: string;
   musicPrivateKey: string;
+  /** 动作频率权重（main 条目）：三项合计 ≤ 100，随机动作是余量。 */
+  animationWeights: Weights;
 }
 
 /** 保存结果：调用方按 `kind` 分支，不再猜 HTTP 细节。 */
@@ -97,6 +99,7 @@ export function buildSaveBody(fields: SaveFields): Record<string, unknown> {
     musicAppId: fields.musicAppId,
     musicAppSecret: fields.musicAppSecret,
     musicPrivateKey: fields.musicPrivateKey,
+    animationWeights: fields.animationWeights,
   };
 }
 
