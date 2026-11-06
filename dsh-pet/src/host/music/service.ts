@@ -10,7 +10,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readAllConfig } from '../config.ts';
 import type { ConfigPaths } from '../config.ts';
-import { NeteaseClient } from './netease.ts';
+import { NeteaseClient, type ApiResult } from './netease.ts';
 import { pickBest } from './match.ts';
 import { parseLrc, window3, type LyricLine } from './lyrics.ts';
 import { SmtcReader, smtcControl, type SmtcSample } from './smtc.ts';
@@ -52,6 +52,8 @@ export class MusicService {
   private reader: SmtcReader | null = null;
   private client: NeteaseClient | null = null;
   private cfg: MusicConfig = { enabled: false, appId: '', privateKey: '', appSecret: '' };
+  /** 用户登录的 refreshToken：accessToken 过期时用它自动续期（AT/RT 同时刷新）。 */
+  private refreshToken = '';
 
   // 采样与时钟
   private sample: SmtcSample = { app: '', title: '', artist: '', status: '' };
@@ -88,7 +90,9 @@ export class MusicService {
       privateKey: this.cfg.privateKey,
       deviceId: 'dshpet_' + this.cfg.appId.slice(-12),
     });
-    this.client.token = this.loadToken();
+    const stored = this.loadToken();
+    this.client.token = stored.token;
+    this.refreshToken = stored.refresh;
     this.reader = new SmtcReader((s) => this.onSample(s));
     this.reader.start();
     this.deps.log(
@@ -110,7 +114,9 @@ export class MusicService {
       return;
     }
     if (!this.cfg.appId || !this.cfg.privateKey) return;
-    const token = this.client?.token || this.loadToken();
+    const stored = this.loadToken();
+    const token = this.client?.token || stored.token;
+    this.refreshToken = this.refreshToken || stored.refresh;
     this.client = new NeteaseClient({
       appId: this.cfg.appId,
       appSecret: this.cfg.appSecret,
@@ -142,21 +148,48 @@ export class MusicService {
     return join(this.deps.userRoot, TOKEN_FILE);
   }
 
-  private loadToken(): string {
+  private loadToken(): { token: string; refresh: string } {
     try {
-      if (!existsSync(this.tokenPath())) return '';
-      return (JSON.parse(readFileSync(this.tokenPath(), 'utf8')) as { token?: string }).token ?? '';
+      if (!existsSync(this.tokenPath())) return { token: '', refresh: '' };
+      const o = JSON.parse(readFileSync(this.tokenPath(), 'utf8')) as { token?: string; refresh?: string };
+      return { token: o.token ?? '', refresh: o.refresh ?? '' };
     } catch {
-      return '';
+      return { token: '', refresh: '' };
     }
   }
 
-  private saveToken(token: string): void {
+  private saveToken(token: string, refresh?: string): void {
     try {
-      writeFileSync(this.tokenPath(), JSON.stringify({ token }), 'utf8');
+      writeFileSync(this.tokenPath(), JSON.stringify({ token, refresh: refresh ?? this.refreshToken }), 'utf8');
     } catch (e) {
       this.deps.log('warn', '[dsh-pet] music: token 落盘失败 ' + String(e));
     }
+  }
+
+  /** 用 refreshToken 续期；成功则更新内存与磁盘。 */
+  private async doRefresh(): Promise<boolean> {
+    if (!this.client || !this.refreshToken) return false;
+    const r = await this.client.refresh(this.refreshToken);
+    if (!r.ok) {
+      // 1407/1408 = 账号或授权失效，刷新无用，只能重登；此处仅记日志，由调用方回落到"未授权"。
+      this.deps.log('warn', `[dsh-pet] music: token 续期失败(${r.code}): ${r.message}`);
+      return false;
+    }
+    this.client.token = r.data.accessToken;
+    this.refreshToken = r.data.refreshToken;
+    this.saveToken(r.data.accessToken, r.data.refreshToken);
+    return true;
+  }
+
+  /**
+   * 带自动续期的调用：先执行；若返回 1406（AT/RT 过期）或 1408（AT 无效），
+   * 用 refreshToken 续期后重试一次。1407（账号被封/授权失效）不重试，直接返回。
+   */
+  private async callWithRefresh<T>(fn: () => Promise<ApiResult<T>>): Promise<ApiResult<T>> {
+    const first = await fn();
+    if (first.ok) return first;
+    if ((first.code === 1406 || first.code === 1408) && (await this.doRefresh())) return fn();
+    return first;
   }
 
   /** 收到一次 SMTC 采样：维护时钟与曲目切换。 */
@@ -194,13 +227,13 @@ export class MusicService {
     if (this.resolving || this.resolvedKey === key || !this.client) return;
     this.resolving = true;
     try {
-      const found = await this.client.search(`${s.artist} ${s.title}`, 5);
+      const found = await this.callWithRefresh(() => this.client!.search(`${s.artist} ${s.title}`, 5));
       if (found.ok) {
         const best = pickBest(found.data, s.title, s.artist);
         if (best) {
           this.songId = best.id;
           this.liked = best.liked === true;
-          const ly = await this.client.lyric(best.id);
+          const ly = await this.callWithRefresh(() => this.client!.lyric(best.id));
           if (ly.ok) this.lines = parseLrc(ly.data);
         }
       }
@@ -268,7 +301,7 @@ export class MusicService {
     if (!this.client.token) return { ok: false, liked: this.liked, message: '未登录' };
     if (!this.songId) return { ok: false, liked: this.liked, message: '未匹配到当前歌曲' };
     const want = !this.liked;
-    const r = await this.client.like(this.songId, want);
+    const r = await this.callWithRefresh(() => this.client!.like(this.songId, want));
     if (!r.ok) return { ok: false, liked: this.liked, message: r.message };
     this.liked = want;
     return { ok: true, liked: this.liked };
@@ -296,7 +329,8 @@ export class MusicService {
     if (!r.ok) return { ok: false, message: r.message };
     if (r.data.token) {
       this.client.token = r.data.token;
-      this.saveToken(r.data.token);
+      this.refreshToken = r.data.refresh ?? this.refreshToken;
+      this.saveToken(r.data.token, this.refreshToken);
       this.resolvedKey = '';
       return { ok: true, status: r.data.status, loggedIn: true };
     }

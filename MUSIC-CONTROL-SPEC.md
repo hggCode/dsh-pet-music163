@@ -61,6 +61,7 @@
 | 搜索歌曲 | `/openapi/music/basic/search/song/get/v3` | `{keyword,limit,offset}` → records[]: id/name/artists/duration/liked/originCoverType/visible |
 | 歌词 | `/openapi/music/basic/song/lyric/get/v2` | `{songId}` → lyric(逐行 LRC)/noLyric/pureMusic |
 | 红心 | `/openapi/music/basic/playlist/song/like/v2` | `{songId,isLike}` |
+| 刷新 token | `/openapi/music/basic/user/oauth2/token/refresh/v2` | `{clientId,clientSecret,refreshToken}` → 新 AT/RT（AT/RT 同时续期） |
 
 **签名**：参数剔除 `sign` 与空值 → key ASCII 升序 → `k=v&` 拼接（值用原始未编码）→ RSA-SHA256(PKCS#1 v1.5) → Base64 → 作为最后一个 query 参数；请求 `POST`，参数全在 query，body 空。
 
@@ -134,7 +135,7 @@ openapi.yaml       /music 六个端点 + Music tag
 **未解决 / 待办**
 1. **进度漂移**：客户端不报时间轴，启动晚于歌曲或拖动进度条后歌词失准，直到下一首。`/music/align` 接口已留，**手动对齐 UI 未做**。
 2. **收藏（♥）未实测写入**：`like/v2` 是写账号操作，未擅自点过；收藏状态回显依赖搜索返回的 `liked`。
-3. **歌词读取依赖登录 token**：匿名 token 对搜索/歌词一律 301，token 过期（约 1 天）后需重新扫码登录；目前无"token 即将过期"提示。
+3. **歌词读取依赖登录 token**：匿名 token 对搜索/歌词一律 301。**已实现自动续期**：登录时把 `refreshToken` 一并落盘（`music-token.json` 的 `{token, refresh}`）；搜索/歌词/收藏返回 `1406`/`1408` 时自动调 `token/refresh/v2` 续期并重试一次（AT/RT 同时刷新，RT 约 20 天），`1407`（账号或授权失效）不重试、需重登。**注意**：本功能上线前保存的旧 token 文件只有 `{token}`、无 `refresh`，需**重新登录一次**以捕获 refreshToken，之后即可自动续期。
 4. **反查可能误配**：同名/翻唱多，`match.ts` 打分兜底，低分宁可不显示歌词。
 5. **设置页文案未做多语言**：音乐卡用固定中文（避免为它改 8 种语言的键集）；若要随宿主语言切换需补 locales。
 
