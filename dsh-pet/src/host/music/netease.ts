@@ -123,7 +123,9 @@ export class NeteaseClient {
    * 用 refreshToken 续期 accessToken（AT/RT 同时刷新）。不传 accessToken——续期靠
    * clientId + clientSecret + refreshToken 认证；带上已过期的 AT 反而可能被判 1406。
    */
-  async refresh(refreshToken: string): Promise<ApiResult<{ accessToken: string; refreshToken: string; expiresTime?: number }>> {
+  async refresh(
+    refreshToken: string,
+  ): Promise<ApiResult<{ accessToken: string; refreshToken: string; expiresTime?: number }>> {
     return this.request<{ accessToken: string; refreshToken: string; expiresTime?: number }>(
       '/openapi/music/basic/user/oauth2/token/refresh/v2',
       { clientId: this.opts.appId, clientSecret: this.opts.appSecret, refreshToken },
