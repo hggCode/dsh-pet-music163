@@ -18,6 +18,7 @@ import {
   flattenCounters,
   readAnim,
   readBalance,
+  readEnv,
   readPosition,
   readSay,
   readSleep,
@@ -198,6 +199,14 @@ describe('readBalance —— 余额叶子 → 客户端视图', () => {
       data: { ok: false, provider: 'p', reason: 'unsupported', manual: 'yes' },
     });
     assert.equal(notBool?.manual, false, '只有严格 true 才算');
+  });
+
+  test('petId 归属：非空字符串才带出，缺省 / 空串 / 非字符串都不写这个键', () => {
+    const data = { ok: false as const, provider: 'p', reason: 'unsupported' as const };
+    assert.equal(readBalance({ counter: 1, data: { ...data, petId: 'main' } })?.petId, 'main');
+    assert.equal('petId' in (readBalance({ counter: 1, data }) ?? {}), false, '不带归属时不该造这个键');
+    assert.equal(readBalance({ counter: 1, data: { ...data, petId: '' } })?.petId, undefined);
+    assert.equal(readBalance({ counter: 1, data: { ...data, petId: 42 } })?.petId, undefined);
   });
 
   test('脏数据 → null（消费端跳过这一拍，不抛）', () => {
@@ -469,5 +478,54 @@ describe('readSleep —— 睡觉叶子解析（状态不是指令）', () => {
     assert.equal(readSleep({ counter: 1, data: { sleeping: true, start: 's', loop: 'l', end: '' } }), null);
     assert.equal(readSleep({ counter: 1, data: { sleeping: 'yes' } }), null);
     assert.equal(readSleep({ counter: 1, data: 'sleeping' }), null);
+  });
+});
+
+describe('readEnv —— 环境叶子解析', () => {
+  /** 一份合法的 env 叶子内容（/environment 带 pet 写入的形状）。 */
+  const DATA = {
+    region: '江西省',
+    city: '南昌市',
+    weather: {
+      city: '南昌',
+      summary: '阴',
+      temperatureC: 12.7,
+      apparentC: 12.5,
+      humidityPercent: 90,
+      windKph: 2.9,
+      code: 3,
+      observedAt: '2026-11-11T21:45',
+    },
+    petId: 'main',
+    ts: 1700000000000,
+  };
+
+  test('完整形态：省市、天气、petId 与时刻原样解析', () => {
+    assert.deepEqual(readEnv({ counter: 1, data: DATA }), DATA);
+  });
+
+  test('没有天气（查不到）：省市仍可用，weather 键不出现', () => {
+    const got = readEnv({ counter: 1, data: { region: '江西省', city: '南昌市', petId: 'main', ts: 1 } });
+    assert.deepEqual(got, { region: '江西省', city: '南昌市', petId: 'main', ts: 1 });
+  });
+
+  test('空串省市被丢弃，不写成空字段', () => {
+    const got = readEnv({ counter: 1, data: { region: '', city: '', petId: 'main', ts: 1 } });
+    assert.deepEqual(got, { petId: 'main', ts: 1 });
+  });
+
+  test('形状非法一律丢弃：缺 petId / petId 空 / ts 非数 / data 为空', () => {
+    assert.equal(readEnv({ counter: 1, data: { ts: 1 } }), null);
+    assert.equal(readEnv({ counter: 1, data: { petId: '', ts: 1 } }), null);
+    assert.equal(readEnv({ counter: 1, data: { petId: 'main', ts: 'now' } }), null);
+    assert.equal(readEnv({ counter: 0, data: null }), null);
+  });
+
+  test('weather 形状坏 → 整拍丢弃，不让半个天气渲染成 0°C', () => {
+    assert.equal(readEnv({ counter: 1, data: { petId: 'main', ts: 1, weather: { city: '南昌' } } }), null);
+    assert.equal(
+      readEnv({ counter: 1, data: { petId: 'main', ts: 1, weather: { ...DATA.weather, temperatureC: '冷' } } }),
+      null,
+    );
   });
 });
