@@ -43,6 +43,7 @@ const SETTINGS_CSS = [
   '.dsh-pet-sel__chevron.is-open{transform:rotate(180deg)}',
   '.dsh-pet-sel__panel{position:fixed;z-index:2147483000;display:flex;flex-direction:column;gap:2px;padding:4px;overflow:hidden;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,10px);background:var(--dsw-alias-bg-layer-1);box-shadow:var(--dsw-elevation-prominent,0 8px 30px rgba(0,0,0,.35));color:var(--dsw-alias-label-primary)}',
   '.dsh-pet-sel__list{display:flex;flex-direction:column;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin}',
+  '.dsh-pet-sel__group{padding:4px 8px 2px;font-size:12px;line-height:16px;color:var(--dsw-alias-label-tertiary);text-align:left}',
   '.dsh-pet-sel__item{display:flex;align-items:center;gap:8px;width:100%;padding:5px 8px;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:inherit;font:inherit;font-size:13px;line-height:20px;text-align:left;cursor:pointer}',
   '.dsh-pet-sel__item:hover:not(:disabled),.dsh-pet-sel__item.is-active{background:var(--dsw-alias-interactive-bg-hover)}',
   '.dsh-pet-sel__item[aria-selected="true"]{color:var(--dsw-alias-state-business-primary)}',
@@ -102,6 +103,10 @@ const SETTINGS_CSS = [
   '.dsh-pet-cfg__inp{box-sizing:border-box;width:100%;min-height:28px;padding:4px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;outline:none}',
   '.dsh-pet-cfg__inp:focus{border-color:var(--dsw-alias-state-business-primary)}',
   '.dsh-pet-cfg__inp:disabled{color:var(--dsw-alias-label-tertiary);cursor:default}',
+
+  // 输入框与旁边的动作按钮并排：按钮按自身内容宽度不压缩，输入框吃掉剩余宽度。
+  '.dsh-pet-cfg__row{display:flex;gap:8px;align-items:center}',
+  '.dsh-pet-cfg__row>.dsh-pet-cfg__inp{flex:1;min-width:0}',
 
   // 人设复用 __inp 的边框与字号，只补高度与纵向缩放；人设没有长度上限，右下角只显示字数、不阻断输入。
   '.dsh-pet-cfg__persona{display:flex;flex-direction:column;gap:2px;min-width:0}',

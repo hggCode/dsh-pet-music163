@@ -10,8 +10,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths';
 import { listBalanceProviders, registerBalanceProvider } from '../balance/index.ts';
-import { listVoiceProviders, registerVoiceProvider } from '../voice/registry.ts';
-import { listSpeechProviders, registerSpeechProvider } from '../voice/speech-registry.ts';
+import { listCatalog, registerVoiceProvider } from '../voice/registry.ts';
+import { listSpeechCatalog, registerSpeechProvider } from '../voice/speech-registry.ts';
 import { listChatMemoryProviders, registerChatMemoryProvider } from '../chat-memory-provider.ts';
 import { migrateUserConfig, type ConfigPaths } from '../config.ts';
 import { createFileLogger, isFileLogger, setDefaultLogger, type FileLogger, type LoggerLike } from '../log-file.ts';
@@ -65,6 +65,8 @@ export interface HostSetup {
   readonly standaloneAiPolicy: () => StandaloneWhisperPolicy | undefined;
   /** 独立模式的余额凭证；DSH 宿主里是 undefined → 余额走 currentSelection 与 credential store。 */
   readonly standaloneAiBalance: () => StandaloneBalanceAuth | undefined;
+  /** 独立模式单独保存的 DeepSeek 语音密钥；DSH 模式下为 undefined。 */
+  readonly standaloneDeepseekKey: () => string | undefined;
   /** 轮询快照 */
   readonly state: PollStateStore;
   /** 第三方菜单注册表 */
@@ -141,6 +143,13 @@ export function createHostSetup(ctx: HostSetupContext): HostSetup {
     return service?.balanceAuth?.();
   };
 
+  /** 独立模式单独保存的 DeepSeek 语音密钥：对话与语音可以用不同服务商。 */
+  const standaloneDeepseekKey = (): string | undefined => {
+    const service = optionalService('standaloneAi') as { deepseekKey?: () => string } | undefined;
+    const key = service?.deepseekKey?.();
+    return key ? key : undefined;
+  };
+
   // 用户主配置（可编辑层）与文件宠物目录；配置读取/合并统一走 readAllConfig（./config）。
   // 主配置是 JSONC（main-config.jsonc）——与包内默认 config.jsonc 同名同格式：
   // 「同步」写进去的就是带注释的原文，扩展名如实反映内容（main-config.json 只读回落 + 启动迁移）
@@ -200,12 +209,12 @@ export function createHostSetup(ctx: HostSetupContext): HostSetup {
     // 同样只给 register（返回 disposer）与 list，不给 unregister。
     voice: {
       register: registerVoiceProvider,
-      list: listVoiceProviders,
+      list: listCatalog,
     },
     // 识别：与合成对称的一槽；注册后 /voice/hear 只走它，不再看宿主自带的 speechToText。
     speech: {
       register: registerSpeechProvider,
-      list: listSpeechProviders,
+      list: listSpeechCatalog,
     },
     // 记忆：第三方注册自己的长期记忆后端（单槽）；只给 register 与 list，注销走返回值。
     memory: {
@@ -245,6 +254,7 @@ export function createHostSetup(ctx: HostSetupContext): HostSetup {
     optionalService,
     standaloneAiPolicy,
     standaloneAiBalance,
+    standaloneDeepseekKey,
     state,
     menuRegistry,
     playback,

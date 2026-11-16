@@ -126,7 +126,11 @@ export const zh = {
   lastOfKind: '「{entry}」只剩这一只，删掉就没有这个种类了。要彻底移除请直接删除该角色包文件。',
   savePartial: '主宠物已保存，但 {names} 没能写回：检查该角色包配置是否合法、目录是否可写。',
   notifyToggle: '系统通知',
-  notifyToggleHint: '对话完成 / 生成失败 / 权限申请 / 用户选择，在窗口失焦时弹出系统级通知（桌面右下角）。',
+  notifyToggleHint:
+    '对话完成 / 生成失败 / 权限申请 / 用户选择时弹出系统级通知（桌面右下角）。默认只在窗口失焦时弹，看本页时不打扰。',
+  notifyWhenFocusedToggle: '前台聚焦时也提醒',
+  notifyWhenFocusedToggleHint:
+    '开着本页、窗口也在前台时，照样弹系统通知、照样播报工作状态语音。默认关闭——想在前台也不漏掉完成与报错时打开。',
   clickSoundToggle: '点击音效',
   clickSoundToggleHint:
     '点一下宠物播一声内置音效（assets/sound/click-duck.wav，音量 0.5；100ms 内的连续点击只响一次，多开也不会叠音）。关掉即完全静音。随「保存」写入用户配置。',
@@ -159,9 +163,21 @@ export const zh = {
   voiceNotifyEnabledHint:
     '任务完成、出错、等你确认时念一句该档位配置的工作状态文案。和系统通知同一取向：用户不在本页（切走、失焦、最小化）时才念，正看着屏幕时不打扰。只念配置里的台词，不念任务详情。默认关闭。',
   voiceNameLabel: '音色',
+  voiceNameHint: '播报时用哪种声音。音色由语音合成实现提供，装了别的实现才会出现更多选项。',
+  speechProviderLabel: '语音识别',
+  speechProviderHint:
+    '按住录音后交给哪个实现转写。只有装了对应的语音输入插件才会出现多个选项；选中的值写进用户配置，识别不到就报错，不会自动换一个。',
   voiceVolumeLabel: '音量',
   voiceVolumeHint:
     '播报音量，0–1 的小数：1 是最大音量（100%），0 是静音。只改播放响度，不会重新合成音频，调它不额外花钱。四类语音共用这一个音量。',
+  environmentTitle: '环境与定位',
+  environmentHint: '天气查哪座城市由这里决定。修改随「保存」写入用户配置。',
+  environmentCityLabel: '城市',
+  environmentCityHint: '填城市名即可，「扬州」和「扬州市」都行。',
+  environmentCityPlaceholder: '留空 = 自动定位',
+  environmentDetect: '检测',
+  environmentDetected: '已填入：{city}',
+  environmentDetectFailed: '检测失败，请手动填写城市名',
   physicsTitle: '物理（拖拽抛掷手感）',
   physicsHint:
     '全局默认，所有宠物共用（pet pack 可在自己种类文件里单独覆盖）；随「保存」写入用户配置（不做即时写入）。浏览器保存后即时生效，桌面端由保存重载宠物窗口后生效。',

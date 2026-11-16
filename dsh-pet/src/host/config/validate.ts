@@ -6,11 +6,14 @@
  * @module dsh-pet/src/host/config/validate
  */
 import { FONT_SIZE_MAX, FONT_SIZE_MIN } from '../../shared/fonts.ts';
-import { isKnownVoice } from '../voice/voices.ts';
+import { VOICE_ID_PATTERN } from '../voice/types.ts';
 import { FONT_FAMILY_SET } from './constants.ts';
 
 /** 内置玩法动画的槽位数：`animations.baifan` 必须恰好这么多个（顺序是玩法契约，见 shared/types 的 Animations）。 */
 const ACTIVITY_SLOTS = 5;
+
+/** 天气城市覆盖的最大长度：再长不可能是个地名。 */
+const ENVIRONMENT_CITY_MAX_LENGTH = 32;
 
 /** animations 段完整性校验（与旧 assertAnimationsHost 同一套规则；不 throw，非法返回 false） */
 function animationsValid(a: unknown): boolean {
@@ -176,6 +179,9 @@ export function topFieldValid(key: string, value: unknown): boolean {
     }
     case 'notificationsEnabled':
       return typeof value === 'boolean';
+    case 'notifyWhenFocused':
+      // 前台聚焦时也提醒（全局布尔，只读 main 条目）：只在 main 顶层生效，缺键按 false 处理
+      return typeof value === 'boolean';
     case 'clickSoundEnabled':
       // 点击音效开关（全局布尔，只读 main 条目）：与 notificationsEnabled 同一套校验
       return typeof value === 'boolean';
@@ -185,8 +191,9 @@ export function topFieldValid(key: string, value: unknown): boolean {
       // 语音播报开关（全局布尔）：只决定念不念，不影响气泡与记忆
       return typeof value === 'boolean';
     case 'voiceName':
-      // 音色必须是白名单内的 id；写错即非法，读取侧回落到默认音色并告警
-      return typeof value === 'string' && isKnownVoice(value);
+      // 音色必须是「provider/音色」形态；存在性交给语音服务解析时判——配置校验拿不到运行时注册表，
+      // 把注册表状态塞进这里会让同一份配置在不同启动顺序下合法与否不一致。
+      return typeof value === 'string' && VOICE_ID_PATTERN.test(value);
     case 'voiceVolume':
       // 播放音量系数：0–1 的有限数，与 Audio.volume 同量纲；越界即非法（不夹取，读取侧回落默认）
       return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
@@ -199,6 +206,13 @@ export function topFieldValid(key: string, value: unknown): boolean {
     case 'voiceNotifyEnabled':
       // 工作状态播报开关（全局布尔）：只决定完成 / 出错 / 等确认三档念不念，不影响系统通知弹窗
       return typeof value === 'boolean';
+    case 'speechProvider':
+      // 识别实现 id；只验形态，存在性由 hear 解析时判——配置校验拿不到运行时注册表
+      return typeof value === 'string' && value.trim().length > 0;
+    case 'environmentCity':
+      // 天气城市覆盖：空串合法（= 跟随 IP 自动定位），所以不判非空；
+      // 只限长度——再长不可能是个地名，而地名能不能查到是上游的事，不该在这里预判
+      return typeof value === 'string' && value.trim().length <= ENVIRONMENT_CITY_MAX_LENGTH;
     case 'chatImageEnabled':
       return typeof value === 'boolean';
     case 'chatAnimationEnabled':

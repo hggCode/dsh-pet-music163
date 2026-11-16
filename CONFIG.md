@@ -19,7 +19,7 @@ DSH 设置 → 「桌宠配置」：
 - **物理参数**：拖拽抛掷手感（重力 / 弹性 / 地面摩擦 / 总力度 / 顶部反弹 / 宠物互撞 / 碰撞震动 / 倾斜控制重力 / 摇一摇抛出）也能在设置页图形化改，不用去手改配置文件。碰撞震动（`physics.hapticEnabled`，默认开）在撞墙、落地、撞顶与宠物互撞时各震一下：Chrome / Edge 等浏览器可用，iOS 与 Via 这类 WebView 套壳浏览器不生效，系统勿扰模式会挡住振动。宠物互撞（`physics.petCollision`，默认开）按动量守恒弹开（质量 ∝ 尺寸²）。体感拆成两个开关：倾斜控制重力（`physics.tiltGravity`，默认关）用手机倾斜方向代替固定向下的重力（`gravity` 为 0 时无从取值，等同关闭）；摇一摇抛出（`physics.shakeThrow`，默认关）沿甩动方向把宠物甩出去（力度 = 基准 × `throwPower`），与重力大小无关，`gravity` 设 0 也能甩着玩。两个都只在 HTTPS 或 localhost 下有效
 - **AI 模型**：碎碎念与对话可以**各自指定模型**——设置页「AI 模型」每项一个下拉框（与 DSH 对话框右下角的模型选择器同款：搜索框 + 按服务商分组的清单，选项同源）；选「跟随当前对话」= 用当前对话的模型，指定了但调用失败会自动回落到当前对话的模型重试一次
 - 点「保存」**即时生效**（无需刷新）；「同步」把包内 `config.jsonc` 的**原文**（含注释与全部高级字段）整份写入用户配置——既回到默认，又留下一份可直接编辑的完整配置
-- **语音**：碎碎念与对话回复可以念出来（默认关闭），音色四选一、默认晓伊（女声 · 活泼）；音色列表来自宿主 `/voice/voices`，不在页面里硬编码
+- **语音**：播报与语音输入各自选实现。音色与识别实现都由宿主提供（`/voice/voices`、`/voice/hear-providers` 两张目录），配置里存的是 `provider/音色` 这样的限定 id 或 provider id，页面不硬编码任何音色；选中的实现被卸载后，请求会明确报错而不是自动换一个
 
 ## 方式二：config.jsonc（单一来源）
 
@@ -39,17 +39,19 @@ DSH 设置 → 「桌宠配置」：
 
 用户层配置文件位于 `$DSH_HOME/dsh-pet/main-config.jsonc`。**它和包内默认配置是同一套格式**——想改什么直接照着 `assets/config.jsonc` 的结构写即可，写错的字段/缺失的字段回落默认，无需（也无法）写完整份。设置页「同步」可直接生成这份完整文件（原文复制包内 `config.jsonc`，注释齐全）：
 
-| 字段                   | 作用                                                                                                           | 格式与默认一致即可         |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `pets`                 | 宠物列表（大小/位置/多开/余额开关）                                                                            | 数组，每项同 `pets[]` 结构 |
-| `animations`           | **动画池**：idle / turn / drag / clicks / moves / categories / events（余额等事件动画）/ sleep（睡觉套，可选） | 同 `animations` 结构       |
-| `animationWeights`     | 动画链播放权重（idle / turn / move）                                                                           | 同 `animationWeights` 结构 |
-| `eventsRefreshSec`     | 事件刷新周期（秒）：`whisper` 碎碎念、`sleepTalk` 梦话、`balance` 余额                                         | 同 `eventsRefreshSec` 结构 |
-| `sleepStartTexts`      | **入睡台词**（条目级，随机挑一句；播「开始」时弹气泡）                                                         | 非空字符串数组             |
-| `sleepEndTexts`        | **醒来台词**（条目级，随机挑一句；播「起来」时弹气泡）                                                         | 非空字符串数组             |
-| `sleepRefuseTexts`     | **睡着被打扰时的拒绝台词**（条目级，随机挑一句）                                                               | 非空字符串数组             |
-| `notificationsEnabled` | 系统通知总开关（布尔）                                                                                         | 同 `notificationsEnabled`  |
-| `chatAnimationEnabled` | **对话动作联动**：开启后对话时把 `animations.categories` 下的动作清单交给模型，由它按语境挑一个当场表演（布尔，默认 true） | 布尔，默认即可             |
+| 字段                   | 作用                                                                                                                            | 格式与默认一致即可         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `pets`                 | 宠物列表（大小/位置/多开/余额开关）                                                                                             | 数组，每项同 `pets[]` 结构 |
+| `animations`           | **动画池**：idle / turn / drag / clicks / moves / categories / events（余额等事件动画）/ sleep（睡觉套，可选）                  | 同 `animations` 结构       |
+| `animationWeights`     | 动画链播放权重（idle / turn / move）                                                                                            | 同 `animationWeights` 结构 |
+| `eventsRefreshSec`     | 事件刷新周期（秒）：`whisper` 碎碎念、`sleepTalk` 梦话、`balance` 余额                                                          | 同 `eventsRefreshSec` 结构 |
+| `sleepStartTexts`      | **入睡台词**（条目级，随机挑一句；播「开始」时弹气泡）                                                                          | 非空字符串数组             |
+| `sleepEndTexts`        | **醒来台词**（条目级，随机挑一句；播「起来」时弹气泡）                                                                          | 非空字符串数组             |
+| `sleepRefuseTexts`     | **睡着被打扰时的拒绝台词**（条目级，随机挑一句）                                                                                | 非空字符串数组             |
+| `notificationsEnabled` | 系统通知总开关（布尔）                                                                                                          | 同 `notificationsEnabled`  |
+| `notifyWhenFocused`    | **前台聚焦时也提醒**：true = 页面可见且有焦点时照样弹通知、照样播报工作状态语音（布尔，默认 false）                             | 布尔，默认即可             |
+| `chatAnimationEnabled` | **对话动作联动**：开启后对话时把 `animations.categories` 下的动作清单交给模型，由它按语境挑一个当场表演（布尔，默认 true）      | 布尔，默认即可             |
+| `environmentCity`      | **天气城市覆盖**：留空 = 按出口 IP 自动定位；填城市名（如「扬州」）就按它查天气，不再走 IP 定位。只读 main 条目，填城市别填省份 | 字符串，默认 `""`          |
 
 > 覆盖语义：用户层给出即**整体替换**该字段（如写了 `animations` 就用你的整份动画池，替代默认），没写的字段回落包内默认。校验在插件加载时执行——格式错误会在 DSH 控制台显式报错，不会静默运行残缺配置。
 
@@ -72,6 +74,7 @@ $DSH_HOME/dsh-pet/
 // pet/pig-config.json —— 与 main-config.jsonc 同构的完整配置
 {
   "notificationsEnabled": true,
+  "notifyWhenFocused": false,
   "pets": [
     {
       "id": "pig1", // 实例 id（可多只；不必等于文件名前缀）
@@ -130,5 +133,3 @@ $DSH_HOME/dsh-pet/
 - 配置非法 / 缺少 `-animation/` 目录 / 实例 id 与主宠物冲突 → 加载时显式报错并跳过（不影响其他宠物）
 - 设置页**会列出**文件宠物（按种类分组）：改名称/大小/位置/显示方式/四个开关/实例人设后保存，写回该种类自己的配置文件——不混进 `main-config.jsonc`，文件顶层的动画池与人设原样保留；「+」可在该种类下新建实例，每种至少留一只
 - 余额档位动画按各宠物自己的 `events.balance`
-
-

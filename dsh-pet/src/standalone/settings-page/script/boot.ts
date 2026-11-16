@@ -11,7 +11,7 @@
 export function bootScript(): string {
   return `
 let protocolSelect = null;
-let balanceSelect = null;
+let serviceSelect = null;
 
 function mountProtocolSelect() {
   const host = byId('protocol-host');
@@ -28,30 +28,15 @@ function mountProtocolSelect() {
   host.append(protocolSelect.root);
 }
 
-function mountBalanceSelect() {
-  const host = byId('balance-provider-host');
+function mountServiceSelect() {
+  const host = byId('service-host');
   if (!host) return;
-  balanceSelect = createSelect(
-    [
-      { value: '', label: '不查询余额' },
-      { value: 'deepseek-official', label: 'DeepSeek 官方' },
-      { value: 'opencode-go', label: 'opencode Go' },
-      { value: 'commandcode', label: 'commandcode' },
-    ],
-    '',
-    (picked) => {
-      const button = byId('balance-btn');
-      if (button) button.disabled = picked === '';
-      const result = byId('balance-result');
-      if (result) {
-        result.textContent = '';
-        result.dataset.ok = '';
-        result.dataset.error = '';
-      }
-    },
-  );
-  balanceSelect.root.firstElementChild.setAttribute('aria-labelledby', 'balance-provider-label');
-  host.append(balanceSelect.root);
+  // 选项由 populateAi 读到的服务商目录重填；这里先给一项，避免首帧空白。
+  serviceSelect = createSelect([{ value: 'custom', label: '自定义' }], 'custom', (picked) => {
+    onServicePicked(picked);
+  });
+  serviceSelect.root.firstElementChild.setAttribute('aria-labelledby', 'service-label');
+  host.append(serviceSelect.root);
 }
 
 function selectTab(name) {
@@ -82,6 +67,32 @@ function wireTabs() {
       selectTab(next.dataset.tab);
     });
   });
+}
+
+async function loadVoiceCatalog() {
+  // 音色与识别实现都是宿主目录：注册了哪些实现，页面就列哪些。
+  // 拉不到就回落构建期注入的内置清单，至少内置实现还能选。
+  try {
+    const body = await callApi('GET', '/voice/voices');
+    if (body && Array.isArray(body.providers)) {
+      state.voiceOptions = body.providers.flatMap((group) =>
+        (group.voices || []).map((voice) => ({
+          id: voice.id,
+          name: voice.name,
+          tag: voice.tag || '',
+          provider: group.name,
+        })),
+      );
+    }
+  } catch {
+    /* 回落内置清单 */
+  }
+  try {
+    const body = await callApi('GET', '/voice/hear-providers');
+    if (body && Array.isArray(body.providers)) state.speechProviders = body.providers;
+  } catch {
+    /* 回落空列表：下拉只显示当前值 */
+  }
 }
 
 async function loadPets() {
@@ -117,8 +128,8 @@ function boot() {
   selectTab('chat');
   // 刷新后地址栏里的令牌已被清掉，此时靠首次访问换来的 HttpOnly cookie 继续；
   // cookie 也没了的时候，各面板自己的请求会失败并显示重新打开设置的提示。
+  mountServiceSelect();
   mountProtocolSelect();
-  mountBalanceSelect();
   wireAiPanel();
   byId('pet-save').addEventListener('click', savePets);
   window.addEventListener('beforeunload', (event) => {
@@ -126,7 +137,8 @@ function boot() {
     event.preventDefault();
     event.returnValue = '';
   });
-  loadPets();
+  // 目录先于配置渲染：voiceCard 要用它决定下拉里有哪些音色与识别实现
+  loadVoiceCatalog().then(loadPets);
   loadAi();
 }
 `;

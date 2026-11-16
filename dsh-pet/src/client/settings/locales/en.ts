@@ -135,7 +135,10 @@ export const en: Record<Key, string> = {
     'Main pets saved, but {names} could not be written back: check that the pack config is valid and the directory is writable.',
   notifyToggle: 'System notifications',
   notifyToggleHint:
-    'OS-level toasts (bottom-right of the desktop) for conversation completion, failures, permission requests, and questions — only while this window is unfocused.',
+    'OS-level toasts (bottom-right of the desktop) for conversation completion, failures, permission requests, and questions. By default they only appear while this window is unfocused.',
+  notifyWhenFocusedToggle: 'Notify while focused',
+  notifyWhenFocusedToggleHint:
+    'Also toast and speak work-status lines while this page is visible and focused. Off by default — turn it on if you do not want to miss completions and failures while looking at the window.',
   clickSoundToggle: 'Click sound',
   clickSoundToggleHint:
     'Plays the built-in click sound (assets/sound/click-duck.wav, volume 0.5) when a pet is clicked; repeated clicks within 100ms play only once, so multiple pets never stack up. Turn it off for silence. Written to the user config together with Save.',
@@ -170,9 +173,22 @@ export const en: Record<Key, string> = {
   voiceNotifyEnabledHint:
     'Speaks a configured work-status line when a task completes, fails, or waits for your confirmation. Like system notifications, it only speaks while you are away from this page (switched away, unfocused, minimized) — no interruption while you are looking at the screen. Only the configured line is spoken, never the task detail. Off by default.',
   voiceNameLabel: 'Voice',
+  voiceNameHint:
+    'Which voice reads the text. Voices come from the synthesis implementation; more appear when another implementation is installed.',
+  speechProviderLabel: 'Speech recognition',
+  speechProviderHint:
+    'Which implementation transcribes a held recording. More than one option appears only when a matching voice-input plugin is installed; the choice is saved to your config and a missing provider fails explicitly instead of falling back.',
   voiceVolumeLabel: 'Volume',
   voiceVolumeHint:
     'Playback volume as a 0–1 decimal: 1 is full volume (100%), 0 is muted. Changes loudness only and never re-synthesizes audio, so adjusting it costs nothing extra. All four kinds of speech share this one volume.',
+  environmentTitle: 'Location',
+  environmentHint: 'Which city the weather is looked up for. Changes are written with "Save".',
+  environmentCityLabel: 'City',
+  environmentCityHint: 'Enter a city name — the short and the full official form both work.',
+  environmentCityPlaceholder: 'Empty = automatic',
+  environmentDetect: 'Detect',
+  environmentDetected: 'Filled in: {city}',
+  environmentDetectFailed: 'Detection failed — enter the city name manually',
   physicsTitle: 'Physics (drag & throw feel)',
   physicsHint:
     'Global default, shared by every pet (a pet pack may override it in its own kind file); written to the user config on "Save" (never written immediately). Applies instantly in the browser; on the desktop it applies once Save reloads the pet windows.',

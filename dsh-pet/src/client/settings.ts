@@ -17,6 +17,7 @@ import { type Feedback, makeActions } from './settings/actions.ts';
 import { petBridge } from './settings/bridge.ts';
 import { type MergedConfig, readConfigEntries, readMainConfig } from './settings/config/index.ts';
 import { type DialogState, makeDialog } from './settings/dialog.ts';
+import { makeEnvironmentCard } from './settings/environment-card.ts';
 import { makeFontCard } from './settings/font-card.ts';
 import { makeGlobalCard, type GlobalFlagKey, type GlobalFlags } from './settings/global-card.ts';
 import { makeLoadStatus } from './settings/load-status.ts';
@@ -77,6 +78,7 @@ export function makePetConfigSection(
   const KindTabs = makeKindTabs({ h, t });
   const PetCard = makePetCard(rt);
   const GlobalCard = makeGlobalCard(rt);
+  const EnvironmentCard = makeEnvironmentCard(rt);
   const VoiceCard = makeVoiceCard(rt, VoicePicker);
   const FontCard = makeFontCard(rt);
   const ModelCard = makeModelCard(rt, ModelPicker);
@@ -124,12 +126,36 @@ export function makePetConfigSection(
     useEffect(() => attachTipLayer(), []);
 
     // 音色列表：与配置无关的一次性拉取，失败留空即可（下拉会只显示当前值）。
+    // 宿主按 provider 分组返回；这里拍平成一维并带上组名，由下拉渲染成 optgroup 式的分隔标题。
     useEffect(() => {
       let alive = true;
       void fetch(ROUTE_PATH + '/voice/voices')
         .then((response) => (response.ok ? response.json() : null))
-        .then((body: { voices?: VoiceOption[] } | null) => {
-          if (alive && body && Array.isArray(body.voices)) setVoiceOptions(body.voices);
+        .then((body: { providers?: { name?: string; voices?: VoiceOption[] }[] } | null) => {
+          if (!alive || !body || !Array.isArray(body.providers)) return;
+          setVoiceOptions(
+            body.providers.flatMap((group) =>
+              (Array.isArray(group.voices) ? group.voices : []).map((voice) => ({
+                ...voice,
+                ...(group.name === undefined ? {} : { providerName: group.name }),
+              })),
+            ),
+          );
+        })
+        .catch(() => undefined);
+      return () => {
+        alive = false;
+      };
+    }, []);
+
+    // 识别实现列表：与音色列表同构的一次性拉取，失败留空即可。
+    useEffect(() => {
+      let alive = true;
+      void fetch(ROUTE_PATH + '/voice/hear-providers')
+        .then((response) => (response.ok ? response.json() : null))
+        .then((body: { providers?: { id: string; name: string }[] } | null) => {
+          if (!alive || !body || !Array.isArray(body.providers)) return;
+          setSpeechProviders(body.providers);
         })
         .catch(() => undefined);
       return () => {
@@ -141,6 +167,8 @@ export function makePetConfigSection(
     // 不做即时写入：PUT /config 会重启桌面 Helper，全部桌面宠物窗口重建（拖拽落点清空、宠物跳回角落）。
     // 引擎重读放在保存成功后（persist 里调 reloadNotifications），保存后即时生效、无需刷新。
     const [notifyEnabled, setNotifyEnabled] = useState(true);
+    // 前台聚焦时也提醒：默认关（维持「不打扰」），与通知开关相邻，随「保存」整包写入。
+    const [notifyWhenFocused, setNotifyWhenFocused] = useState(false);
     // 点击音效开关：同通知开关，随「保存」整包写入；初值 true 是内置默认，加载效应会用成品值覆盖。
     const [clickSound, setClickSound] = useState(true);
     // 表情包配图开关（全局）：切换只改本地状态，随「保存」一起提交。
@@ -152,9 +180,10 @@ export function makePetConfigSection(
     const [confineScreen, setConfineScreen] = useState(false);
     // 系统托盘开关（全局）：随「保存」一起提交；宿主半侧据此决定建不建托盘、没桌面宠物时还值不值得常驻 Helper。
     const [trayEnabled, setTrayEnabled] = useState(true);
-    // 语音播报开关与音色（全局默认）：随「保存」整包写入；初值即内置默认，加载后用成品值覆盖。
+    // 语音播报开关与音色（全局默认）：随「保存」整包写入；音色初值留空，加载后由成品值覆盖。
     const [voiceEnabled, setVoiceEnabled] = useState(false);
-    const [voiceName, setVoiceName] = useState('zh-CN-XiaoyiNeural');
+    // 不在前端写默认音色：空串表示「还没拿到成品值」，保存时这一项不提交，免得用本地猜的 id 覆盖配置
+    const [voiceName, setVoiceName] = useState('');
     // 播放音量（全局系数 0–1）：初值 1 是内置默认（最大音量），加载后由成品值覆盖。
     const [voiceVolume, setVoiceVolume] = useState(1);
     // 另外三类语音开关（周期碎碎念 / 待办提醒 / 工作状态播报）：与语音播报平级，初值 false 是内置默认。
@@ -163,6 +192,12 @@ export function makePetConfigSection(
     const [voiceNotifyEnabled, setVoiceNotifyEnabled] = useState(false);
     // 可选音色：来自宿主 /voice/voices，拉不到就留空——下拉只显示当前值，绝不硬编码音色 id。
     const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([]);
+    // 语音识别实现：请求没带 provider 时用它；空串表示「还没拿到成品值」，保存时该项不提交。
+    const [speechProvider, setSpeechProvider] = useState('');
+    // 可选识别实现：来自宿主 /voice/hear-providers，拉不到就留空（下拉只显示当前值）。
+    const [speechProviders, setSpeechProviders] = useState<{ id: string; name: string }[]>([]);
+    // 天气城市覆盖（全局，只读 main）：空串是有效值 = 跟随 IP 自动定位，所以初值就是空串。
+    const [environmentCity, setEnvironmentCity] = useState('');
     // 物理参数（全局）：只改本地状态，随「保存」整包写入；初值仅占位，成品加载成功后才允许编辑与保存。
     const [physics, setPhysics] = useState<PhysicsParams>({ ...DEFAULT_PHYSICS });
     // 字体（全局默认）：与 physics 同一套语义；初值仅占位，成品加载成功后才允许编辑与保存。
@@ -195,6 +230,7 @@ export function makePetConfigSection(
         if (entries === null || patch === null) throw new Error('Invalid config response');
         replace(entries);
         if (patch.notificationsEnabled !== undefined) setNotifyEnabled(patch.notificationsEnabled);
+        if (patch.notifyWhenFocused !== undefined) setNotifyWhenFocused(patch.notifyWhenFocused);
         if (patch.clickSoundEnabled !== undefined) setClickSound(patch.clickSoundEnabled);
         if (patch.whisperImageEnabled !== undefined) setWhisperImage(patch.whisperImageEnabled);
         if (patch.chatImageEnabled !== undefined) setChatImage(patch.chatImageEnabled);
@@ -207,6 +243,8 @@ export function makePetConfigSection(
         if (patch.voiceWhisperEnabled !== undefined) setVoiceWhisperEnabled(patch.voiceWhisperEnabled);
         if (patch.voiceTodoEnabled !== undefined) setVoiceTodoEnabled(patch.voiceTodoEnabled);
         if (patch.voiceNotifyEnabled !== undefined) setVoiceNotifyEnabled(patch.voiceNotifyEnabled);
+        if (patch.speechProvider !== undefined) setSpeechProvider(patch.speechProvider);
+        if (patch.environmentCity !== undefined) setEnvironmentCity(patch.environmentCity);
         if (patch.physics !== undefined) setPhysics(patch.physics);
         if (patch.font !== undefined) setFont(patch.font);
         if (patch.animationWeights !== undefined) setWeights(patch.animationWeights);
@@ -271,6 +309,7 @@ export function makePetConfigSection(
     // 七个顶层开关的当前值：卡片各认自己那几项，键名与成品配置字段同名。
     const globalFlags: GlobalFlags = {
       notificationsEnabled: notifyEnabled,
+      notifyWhenFocused,
       clickSoundEnabled: clickSound,
       confineToScreen: confineScreen,
       trayEnabled,
@@ -285,6 +324,7 @@ export function makePetConfigSection(
     // 两束开关共用这张表：键名到 setter 的映射只写一遍，卡片只管回传键名。
     const flagSetters: Record<GlobalFlagKey | ChatFlagKey, (value: boolean) => void> = {
       notificationsEnabled: (value) => void toggleNotify(value),
+      notifyWhenFocused: setNotifyWhenFocused,
       clickSoundEnabled: setClickSound,
       confineToScreen: setConfineScreen,
       trayEnabled: setTrayEnabled,
@@ -312,6 +352,7 @@ export function makePetConfigSection(
         // PUT /config 只写用户主配置：只能提交 main 层实例，pack 实例走 POST /pet-config。
         pets: mainPets,
         notificationsEnabled: notifyEnabled,
+        notifyWhenFocused,
         clickSoundEnabled: clickSound,
         whisperImageEnabled: whisperImage,
         chatImageEnabled: chatImage,
@@ -319,11 +360,16 @@ export function makePetConfigSection(
         confineToScreen: confineScreen,
         trayEnabled,
         voiceEnabled,
-        voiceName,
+        // 空串 = 还没加载到成品值：不提交，免得用一个本地猜的音色覆盖配置
+        ...(voiceName === '' ? {} : { voiceName }),
         voiceVolume,
         voiceWhisperEnabled,
         voiceTodoEnabled,
         voiceNotifyEnabled,
+        // 空串 = 还没加载到成品值：不提交，免得用一个本地猜的识别实现覆盖配置
+        ...(speechProvider === '' ? {} : { speechProvider }),
+        // 城市覆盖与上面两项不同：空串是有效值（= 恢复自动定位），必须照常提交
+        environmentCity,
         physics,
         whisperModel,
         chatModel,
@@ -413,6 +459,9 @@ export function makePetConfigSection(
           whisperEnabled: voiceWhisperEnabled,
           todoEnabled: voiceTodoEnabled,
           notifyEnabled: voiceNotifyEnabled,
+          speechProvider,
+          speechProviders,
+          onSpeechProviderChange: setSpeechProvider,
           onToggle: setVoiceEnabled,
           onVoiceChange: setVoiceName,
           onVolumeChange: setVoiceVolume,
@@ -449,6 +498,7 @@ export function makePetConfigSection(
           onAppSecret: setMusicAppSecret,
           onPrivateKey: setMusicPrivateKey,
         }),
+        h(EnvironmentCard, { busy, city: environmentCity, onChange: setEnvironmentCity }),
         h(Actions, {
           busy,
           msg,
