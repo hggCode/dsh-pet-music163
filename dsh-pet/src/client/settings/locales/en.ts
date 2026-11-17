@@ -175,6 +175,20 @@ export const en: Record<Key, string> = {
   voiceNameLabel: 'Voice',
   voiceNameHint:
     'Which voice reads the text. Voices come from the synthesis implementation; more appear when another implementation is installed.',
+  memoryTitle: 'Long-term memory',
+  memoryHint:
+    'Which memory backend handles chats. The address and token below belong to PowerContext and are hidden for other backends.',
+  memoryProviderLabel: 'Long-term memory',
+  memoryProviderHint:
+    'Which memory implementation chats use. The built-in one carries only the recent window; more options appear once a third-party memory plugin is installed. The selected id goes into your config, and an unknown id falls back to the built-in one with a log entry.',
+  powercontextEndpointLabel: 'PowerContext endpoint',
+  powercontextEndpointHint: 'Root address of your local PowerContext server, e.g. http://127.0.0.1:8000.',
+  powercontextTokenLabel: 'Access token',
+  powercontextTokenHint:
+    'Leave empty when the server runs without authentication. The token only lives in your local config and never reaches the logs.',
+  optimizeQuery: 'Query optimization',
+  optimizeQueryHint:
+    'When on, a model rewrites your sentence into a search query and attaches the last two turns to resolve references. Off by default: references usually point at what was just said, and those turns are already in the chat history.',
   speechProviderLabel: 'Speech recognition',
   speechProviderHint:
     'Which implementation transcribes a held recording. More than one option appears only when a matching voice-input plugin is installed; the choice is saved to your config and a missing provider fails explicitly instead of falling back.',
@@ -211,6 +225,9 @@ export const en: Record<Key, string> = {
     'Turn this off to let a throw fly out through the top of the screen (gravity still pulls it back)',
   physicsPetCollision: 'Pet collisions',
   physicsPetCollisionHint: 'A flying pet bounces off the others with momentum conservation (mass ∝ size²)',
+  physicsDragSpring: 'Spring follow',
+  physicsDragSpringHint:
+    'On (default): an overdamped spring chases the pointer, so the pet trails slightly and feels soft. Off: rigid real-time follow — the pet sticks to the cursor. Throw strength is unaffected.',
   physicsHaptic: 'Collision haptics',
   physicsHapticHint:
     'One buzz per hit (walls, floor, ceiling, other pets). Works in Chrome/Edge; not on iOS or WebView shells like Via. Do Not Disturb blocks it.',

@@ -176,6 +176,20 @@ export const de: Record<Key, string> = {
   voiceNameLabel: 'Stimme',
   voiceNameHint:
     'Welche Stimme den Text liest. Stimmen stammen von der Synthese-Implementierung; weitere erscheinen mit weiteren Implementierungen.',
+  memoryTitle: 'Langzeitgedächtnis',
+  memoryHint:
+    'Welche Speicher-Implementierung den Chat bedient. Adresse und Token unten gehören zu PowerContext und werden bei anderen Implementierungen ausgeblendet.',
+  memoryProviderLabel: 'Langzeitgedächtnis',
+  memoryProviderHint:
+    'Welche Gedächtnis-Implementierung der Chat nutzt. Die eingebaute trägt nur das aktuelle Fenster; weitere Optionen erscheinen, sobald ein Gedächtnis-Plugin von Drittanbietern installiert ist. Die gewählte id landet in der Konfiguration; eine unbekannte id fällt mit einem Logeintrag auf die eingebaute zurück.',
+  powercontextEndpointLabel: 'PowerContext-Adresse',
+  powercontextEndpointHint: 'Wurzeladresse deines lokalen PowerContext-Servers, z. B. http://127.0.0.1:8000.',
+  powercontextTokenLabel: 'Zugriffstoken',
+  powercontextTokenHint:
+    'Leer lassen, wenn der Server ohne Authentifizierung läuft. Das Token steht nur in der lokalen Konfiguration und landet nie im Log.',
+  optimizeQuery: 'Abfrage-Optimierung',
+  optimizeQueryHint:
+    'Aktiviert schreibt ein Modell den Satz in eine Suchabfrage um und hängt die letzten zwei Runden an, um Bezüge aufzulösen. Standardmäßig aus: Bezüge meinen meist das eben Gesagte, und diese Runden stehen schon im Verlauf.',
   speechProviderLabel: 'Spracherkennung',
   speechProviderHint:
     'Welche Implementierung die Aufnahme transkribiert. Mehrere Optionen erscheinen nur mit installiertem Spracheingabe-Plugin; die Auswahl wird gespeichert, ein fehlender Anbieter führt zu einem Fehler statt zu einem stillen Wechsel.',
@@ -211,6 +225,9 @@ export const de: Record<Key, string> = {
   physicsCeilingBounceHint: 'Aus: Würfe können oben aus dem Bildschirm fliegen (die Schwerkraft holt sie zurück)',
   physicsPetCollision: 'Pet-Kollisionen',
   physicsPetCollisionHint: 'Ein fliegendes Pet prallt mit Impulserhaltung von anderen ab (Masse ∝ Größe²)',
+  physicsDragSpring: 'Feder-Folgen',
+  physicsDragSpringHint:
+    'An (Standard): Eine überdämpfte Feder folgt dem Zeiger, das Pet hängt leicht zurück und wirkt weich. Aus: starres Echtzeit-Folgen, das Pet klebt am Cursor. Die Wurfkraft bleibt unverändert.',
   physicsHaptic: 'Kollisions-Vibration',
   physicsHapticHint:
     'Ein Impuls pro Treffer (Wand, Boden, Decke, andere Pets). Funktioniert in Chrome/Edge; nicht auf iOS oder in WebView-Hüllen wie Via. „Nicht stören“ blockiert die Vibration.',

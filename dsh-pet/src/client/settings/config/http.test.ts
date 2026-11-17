@@ -256,6 +256,7 @@ describe('buildSaveBody —— 请求体字段', () => {
       'confineToScreen',
       'environmentCity',
       'font',
+      'memory',
       'musicAppId',
       'musicAppSecret',
       'musicEnabled',

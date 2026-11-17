@@ -164,6 +164,18 @@ export const zh = {
     '任务完成、出错、等你确认时念一句该档位配置的工作状态文案。和系统通知同一取向：用户不在本页（切走、失焦、最小化）时才念，正看着屏幕时不打扰。只念配置里的台词，不念任务详情。默认关闭。',
   voiceNameLabel: '音色',
   voiceNameHint: '播报时用哪种声音。音色由语音合成实现提供，装了别的实现才会出现更多选项。',
+  memoryTitle: '长期记忆',
+  memoryHint: '对话时用哪个记忆实现；PowerContext 的地址与令牌只属于它，选别家时不显示。',
+  memoryProviderLabel: '长期记忆',
+  memoryProviderHint:
+    '对话时用哪个记忆实现。内置的「内置记忆」只带最近若干轮历史；装了第三方记忆插件才会出现更多选项，选中的 id 写进用户配置，找不到对应实现时回落内置并记一条日志。',
+  powercontextEndpointLabel: 'PowerContext 地址',
+  powercontextEndpointHint: '本机 PowerContext 服务的根地址，例如 http://127.0.0.1:8000。',
+  powercontextTokenLabel: '访问令牌',
+  powercontextTokenHint: '服务端没开认证时留空。令牌只存在本机配置里，不进日志。',
+  optimizeQuery: '查询优化',
+  optimizeQueryHint:
+    '开启后用模型把这句话改写成检索查询，并带上最近两轮还原指代。默认关闭：指代通常指向刚说过的话，那些轮次本来就在对话历史里，不必为此每轮多花一次模型调用。',
   speechProviderLabel: '语音识别',
   speechProviderHint:
     '按住录音后交给哪个实现转写。只有装了对应的语音输入插件才会出现多个选项；选中的值写进用户配置，识别不到就报错，不会自动换一个。',
@@ -196,6 +208,9 @@ export const zh = {
   physicsCeilingBounceHint: '关掉后抛掷可飞出屏幕顶部（重力仍会把它拉回来）',
   physicsPetCollision: '宠物互撞',
   physicsPetCollisionHint: '飞行中的宠物撞到别的宠物按动量守恒弹开（质量 ∝ 尺寸²）',
+  physicsDragSpring: '弹簧跟手',
+  physicsDragSpringHint:
+    '开（默认）= 拖拽时用过阻尼弹簧追指针，会有一点跟手延迟、手感柔和；关 = 刚性实时跟随，宠物直接贴住鼠标。不影响甩出力度。',
   physicsHaptic: '碰撞震动',
   physicsHapticHint:
     '撞墙、落地、撞顶、互撞各震一下。Chrome / Edge 可用；iOS 与 Via 等 WebView 壳不生效；勿扰模式会挡住振动。',

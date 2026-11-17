@@ -10,7 +10,7 @@
 export function globalsScript(): string {
   return `
 function globalCards() {
-  return [globalFlagsCard, voiceCard, fontCard, physicsCard, motionCard, modelCard, environmentCard, advancedCard];
+  return [globalFlagsCard, voiceCard, fontCard, physicsCard, motionCard, modelCard, memoryCard, environmentCard, advancedCard];
 }
 
 function setGlobal(key, value) {
@@ -115,6 +115,7 @@ function physicsCard() {
     ]),
     toggleRow('g-ceiling', '顶部反弹', '关掉后上方没有边界，抛掷可以飞出屏幕顶部。', g.physics.ceilingBounce !== false, (value) => { g.physics = Object.assign({}, g.physics, { ceilingBounce: value }); }),
     toggleRow('g-collide', '宠物互相碰撞', '飞行中的宠物撞到其它宠物时按动量弹开。', g.physics.petCollision !== false, (value) => { g.physics = Object.assign({}, g.physics, { petCollision: value }); }),
+    toggleRow('g-spring', '弹簧跟手', '开（默认）= 拖拽时用弹簧追指针，有一点延迟、手感柔和；关 = 刚性实时跟随，宠物直接贴住鼠标。不影响甩出力度。', g.physics.dragSpring !== false, (value) => { g.physics = Object.assign({}, g.physics, { dragSpring: value }); }),
   ]);
 }
 
@@ -146,11 +147,42 @@ function motionCard() {
 
 function modelCard() {
   const g = state.globals;
-  return card('对话上下文', '模型与接入方式在「AI 服务商」页配置；这里只管对话保留多少上下文。', [
+  return card('对话上下文', '模型与接入方式在「AI 服务商」页配置；这里管对话保留多少上下文。', [
     make('div', { class: 'grid2' }, [
       numberField('g-memory', '对话记忆轮数', g.chatMemoryRounds, (value) => setGlobal('chatMemoryRounds', Math.round(clampNumber(value, 0, 100, 0))), { min: 0, max: 100, step: 1, hint: '0 表示不带历史。' }),
       numberField('g-image-limit', '配图张数上限', g.chatImageLimit, (value) => setGlobal('chatImageLimit', Math.round(clampNumber(value, 0, 50, 0))), { min: 0, max: 50, step: 1, hint: '0 表示不限制。' }),
     ]),
+  ]);
+}
+
+function memoryCard() {
+  const g = state.globals;
+  const memoryProviders = state.memoryProviders || [];
+  const isPowerContext = g.memory.provider === POWERCONTEXT_ID;
+  // PowerContext 的参数只属于它：选中别家时整块隐藏。用 hidden 切换而不是整卡重渲染——
+  // 重渲染会把正在输入的光标位置丢掉。
+  const details = make('div', { class: 'grid2', hidden: !isPowerContext }, [
+    textField('g-pc-endpoint', 'PowerContext 地址', g.memory.powercontext.endpoint, (value) => {
+      g.memory.powercontext = Object.assign({}, g.memory.powercontext, { endpoint: value });
+    }, { hint: '本机 PowerContext 服务的根地址，例如 http://127.0.0.1:8000。' }),
+    textField('g-pc-token', '访问令牌', g.memory.powercontext.token, (value) => {
+      g.memory.powercontext = Object.assign({}, g.memory.powercontext, { token: value });
+    }, { secret: true, hint: '服务端没开认证时留空。令牌只存在本机配置里，不进日志。' }),
+  ]);
+  const optimize = make('div', { hidden: !isPowerContext }, [
+    toggleRow('g-pc-optimize', '查询优化', '开启后用模型把这句话改写成检索查询，并带上最近两轮还原指代。默认关闭：指代通常指向刚说过的话，那些轮次本来就在对话历史里。', g.memory.powercontext.optimizeQuery, (value) => {
+      g.memory.powercontext = Object.assign({}, g.memory.powercontext, { optimizeQuery: value });
+    }),
+  ]);
+  return card('长期记忆', '对话时用哪个记忆实现；下面的地址、令牌与开关只属于 PowerContext。', [
+    selectField('g-memory-provider', '记忆实现', g.memory.provider, memoryProviders.map((item) => ({ value: item.id, label: item.name })), (value) => {
+      g.memory.provider = value;
+      const show = value === POWERCONTEXT_ID;
+      details.hidden = !show;
+      optimize.hidden = !show;
+    }, '对话时用哪个记忆实现。内置的只带最近若干轮历史；装了第三方记忆插件才会出现更多选项，找不到对应实现时回落内置。'),
+    details,
+    optimize,
   ]);
 }
 

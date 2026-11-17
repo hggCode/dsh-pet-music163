@@ -12,6 +12,7 @@ import { CORNER_SET, isValidPetId, PET_DISPLAY_SET } from './constants.ts';
 import { isValidSizePercent } from '../../shared/pet-size.ts';
 import type { ConfigPaths } from './constants.ts';
 import { fontValid, modelSelectionValid, physicsValid, topFieldValid } from './validate.ts';
+import type { MemoryConfig } from '../../shared/memory.ts';
 
 /**
  * 保存用户层（PUT /config）：接受 pets + 全局开关 + physics / font / 两个模型 / 对话参数。
@@ -114,6 +115,10 @@ export function saveUserConfig(
   // 识别实现（全局）：只验形态，存在性由 hear 解析时判——配置校验拿不到运行时注册表
   const sp = o.speechProvider;
   if (sp !== undefined && !topFieldValid('speechProvider', sp)) return null;
+  // 长期记忆（全局默认，整段）：与 physics 同一套语义——传了就整段校验后进白名单，
+  // 没传则走下面的透传保留。provider 与 powercontext 三个子键都 trim 后落盘，请求体多带的键不写进用户层。
+  const mem = o.memory;
+  if (mem !== undefined && !topFieldValid('memory', mem)) return null;
   // 天气城市覆盖（全局，只读 main）：空串是有效值（= 跟随 IP 自动定位），
   // 因此这里与其它可选字段不同——判的是 undefined 而不是真值，清空输入框必须能写回空串。
   const ec = o.environmentCity;
@@ -183,6 +188,17 @@ export function saveUserConfig(
     turn: Number(v.turn),
     move: Number(v.move),
   });
+  const cleanMemory = (v: Record<string, unknown>): MemoryConfig => {
+    const pc = (v.powercontext ?? {}) as Record<string, unknown>;
+    return {
+      provider: String(v.provider).trim(),
+      powercontext: {
+        endpoint: String(pc.endpoint).trim(),
+        token: String(pc.token).trim(),
+        optimizeQuery: pc.optimizeQuery === true,
+      },
+    };
+  };
   // 白名单可编辑字段：pets 来自请求体，其余（四个全局开关 / physics / 两个模型 /
   // 对话历史条数）同样只在请求体真的传了时才写（未传则走下面的透传保留，不凭空造值）
   const outConfig: { pets: unknown[]; [key: string]: unknown } = { pets: out };
@@ -200,6 +216,7 @@ export function saveUserConfig(
   if (vte !== undefined) outConfig.voiceTodoEnabled = vte;
   if (vne !== undefined) outConfig.voiceNotifyEnabled = vne;
   if (sp !== undefined) outConfig.speechProvider = sp;
+  if (mem !== undefined) outConfig.memory = cleanMemory(mem as Record<string, unknown>);
   if (ec !== undefined) outConfig.environmentCity = String(ec).trim();
   if (te !== undefined) outConfig.trayEnabled = te;
   if (ph !== undefined) outConfig.physics = ph;
@@ -233,6 +250,7 @@ export function saveUserConfig(
   if (vte !== undefined) bodyOwned.add('voiceTodoEnabled');
   if (vne !== undefined) bodyOwned.add('voiceNotifyEnabled');
   if (sp !== undefined) bodyOwned.add('speechProvider');
+  if (mem !== undefined) bodyOwned.add('memory');
   if (ec !== undefined) bodyOwned.add('environmentCity');
   if (te !== undefined) bodyOwned.add('trayEnabled');
   if (ph !== undefined) bodyOwned.add('physics');
